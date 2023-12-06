@@ -13,12 +13,11 @@ from services.gabor import gabor_filter
 from services.tamura import get_tamura_features
 
 app = Flask(__name__)
+
+CORS(app, origins="*")
 api = Api(app)
 
-# Enable CORS for all routes
-CORS(app)
-
-
+counter = 0
 class HistogramDescriptor(Resource):
     def get(self):
         start_time = time.time()
@@ -132,7 +131,7 @@ class SimilarImagesDescriptor(Resource):
         other_images_distance = [{image["id"]: global_distance(image)} for image in other_images]
 
         distance_list = [
-            {id_: (selected_image_distance - global_distance_image)}
+            {id_: abs((selected_image_distance - global_distance_image))}
             for item in other_images_distance
             for id_, global_distance_image in item.items()
         ]
@@ -157,4 +156,4 @@ def add_resources(api):
 add_resources(api)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=8000, debug=True)

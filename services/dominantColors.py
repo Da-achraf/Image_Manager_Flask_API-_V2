@@ -1,31 +1,30 @@
 import cv2
 import numpy as np
-from collections import Counter
-from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import KMeans
 
-def find_dominant_colors(image, k=10, downsample_ratio=0.1):
-    # Downsample the image
-    small_image = cv2.resize(image, None, fx=downsample_ratio, fy=downsample_ratio)
 
-    # Reshape the downsampled image to a 2D array of pixels
-    pixels = np.float32(small_image.reshape(-1, 3))
+def find_dominant_colors(img, nbreDominantColors=10):
+    # Calculer et afficher les couleurs dominantes d’une image à couleurs réelles ( Calcul dans l’espace RGB)
+    # Créer une image temopraire
+    barColorW = 75
+    barColorH = 50
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-    # Apply MiniBatchKMeans from scikit-learn
-    kmeans = MiniBatchKMeans(n_clusters=k, batch_size=1000, max_iter=100, n_init=3)
-    kmeans.fit(pixels)
-
-    # Get centroids and labels
-    centroids = kmeans.cluster_centers_
-    labels = kmeans.labels_
-
-    # Get the counts of labels to find the dominant colors
-    label_counts = Counter(labels)
-
-    # Sort label counts to get top k dominant colors
-    top_labels = sorted(label_counts, key=label_counts.get, reverse=True)[:k]
-
-    # Get RGB values of the top k dominant colors
-    dominant_colors = [centroids[label] for label in top_labels]
-    dominant_colors = [[int(value) for value in color] for color in dominant_colors]
-
+    # Changement d'echelle, pour avoir moins d'exemples
+    width = 50  # largeur cible
+    ratio = img.shape[0] / img.shape[1]
+    height = int(img.shape[1] * ratio)
+    dim = (width, height)
+    img = cv2.resize(img, dim)
+    # Paramètres d'apprentissage
+    # Un triplet (B, G, R) par ligne
+    examples = img.reshape((img.shape[0] * img.shape[1], 3))
+    # Groupement par la technique des KMEANS
+    kmeans = KMeans(n_clusters=nbreDominantColors, n_init=10)
+    kmeans.fit(examples)
+    # Les Centres des groupement représentent les couleurs dominantes (B, G, R)
+    colors = kmeans.cluster_centers_.astype(int)
+    dominant_colors = []
+    for i in range(0, nbreDominantColors):
+        dominant_colors.append([int(x) for x in colors[i]])
     return dominant_colors

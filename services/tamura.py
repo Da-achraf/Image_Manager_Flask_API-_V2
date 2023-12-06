@@ -1,7 +1,5 @@
 import cv2
 import numpy as np
-import time
-
 
 
 def get_tamura_features(image):
@@ -11,34 +9,20 @@ def get_tamura_features(image):
     :return: Returns a dictionary of features (coarseness, contrast, directionality...etc.).
     """
     features = dict()
-    start_time = time.time()
     features["coarseness"] = float(get_coarseness_tamura(image))
-    coarseness_time = time.time()
     features["contrast"] = float(get_contrast(image))
-    contrast_time = time.time()
     features["directionality"] = float(get_directionality(image))
-    directionality_time = time.time()
     features["regularity"] = float(calculate_regularity(image))
-    regularity_time = time.time()
     features["roughness"] = float(calculate_roughness(image))
-    roughness_time = time.time()
     features["linelikeness"] = float(get_linelikeness(image))
-    linelikeness_time = time.time()
-
-    print(coarseness_time - start_time)
-    print(contrast_time - coarseness_time)
-    print(directionality_time - contrast_time)
-    print(regularity_time - directionality_time)
-    print(roughness_time - regularity_time)
-    print(linelikeness_time - roughness_time)
 
     return features
 
-def get_coarseness_tamura(image):
-    assert image.shape[0] > 64 and image.shape[1] >= 64, "Image dimensions should be minimum 64X64"
 
-    # Resize the image if it's larger than 1024x1024
-    image = cv2.resize(image, (min(1024, image.shape[0]), min(1024, image.shape[1])))
+def get_coarseness_tamura(image):
+
+    # Resize the image if it's larger than 200x200
+    # image = cv2.resize(image, (min(200, image.shape[1]), min(200, image.shape[0])))
     H, W = image.shape[:2]
     Ei = []
     SBest = np.zeros((H, W))
@@ -80,6 +64,7 @@ def get_coarseness_tamura(image):
     coarseness = np.sum(SBest) / (H * W)
     return coarseness
 
+
 def get_contrast(image):
     # Convert the image to grayscale if it's a color image
     if len(image.shape) > 2:
@@ -98,6 +83,7 @@ def get_contrast(image):
     n = 0.25
     tamura_contrast = std / (alfa4 ** n)
     return tamura_contrast
+
 
 def get_directionality(image, threshold=12):
     # Sobel derivatives to compute gradients
@@ -127,6 +113,7 @@ def get_directionality(image, threshold=12):
     fdir = np.sum((np.arange(n) - hd_max_index) ** 2 * dir_vector)
 
     return fdir
+
 
 def get_linelikeness(image):
     # Convert the image to grayscale
@@ -164,6 +151,7 @@ def get_linelikeness(image):
 
     return linelikeness
 
+
 def calculate_lbp(image):
     # Convert the image to grayscale if it's a color image
     if len(image.shape) > 2:
@@ -175,12 +163,14 @@ def calculate_lbp(image):
     lbp = cv2.OLBP(image, radius, num_points) if cv2.__version__.startswith('3') else cv2.ORB_create().detectAndCompute(image, None)[1]
     return lbp
 
+
 def calculate_regularity(image):
     lbp = calculate_lbp(image)
     hist = cv2.calcHist([lbp.astype(np.uint8)], [0], None, [256], [0, 256])
     hist /= np.sum(hist)
     regularity = -np.sum(hist * np.log2(hist + 1e-10))
     return regularity
+
 
 def calculate_roughness(image):
     # Convert the image to grayscale if it's a color image
